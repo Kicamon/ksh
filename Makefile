@@ -12,4 +12,4 @@ $(TARGET): $(OBJ)
  
 .PHONY: clean
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o lib/*.o $(TARGET)

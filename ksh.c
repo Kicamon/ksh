@@ -9,7 +9,6 @@
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
-#define MAX(A, B) ((A) > (B) ? (A) : (B))
 
 void read_command(char* command) {
     char dir[PATH_MAX];
