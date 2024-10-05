@@ -15,6 +15,8 @@
 
 const char* commands[] = { "gd", "ls", "exit", "echo", "pwd", NULL };
 
+static void ksh_loop(char* command, char** args);
+static void resource_configuration(char* command, char** args);
 static char* command_generator(const char* text, int state);
 static char** my_completion(const char* text, int start, int end);
 static void read_command(char* command);
@@ -32,7 +34,7 @@ char* command_generator(const char* text, int state) {
     }
 
     while ((name = (char*)commands[list_index++])) {
-        if (strncmp(name, text, len) == 0) {
+        if (strncasecmp(name, text, len) == 0) {
             return strdup(name);
         }
     }
@@ -41,13 +43,10 @@ char* command_generator(const char* text, int state) {
 }
 
 char** my_completion(const char* text, int start, int end) {
-    char** matches = NULL;
+    (void)start;
+    (void)end;
 
-    if (start == 0) {
-        matches = rl_completion_matches(text, command_generator);
-    }
-
-    return matches;
+    return rl_completion_matches(text, command_generator);
 }
 
 void read_command(char* command) {
@@ -57,9 +56,9 @@ void read_command(char* command) {
     char* prefix_dir = replace_substring(dir, HOME_dir, "~");
 
     printf("\n");
-    printf("KicamonIce %s\n", prefix_dir);
+    printf("\033[1;37m%s\033[0m \033[1;36m%s\033[0m\n", getenv("LOGNAME"), prefix_dir);
 
-    char* input = readline("λ ");
+    char* input = readline("\033[1;32mλ\033[0m ");
     if (input && *input) {
         add_history(input);
         strncpy(command, input, MAX_COMMAND_LENGTH - 1);
@@ -82,14 +81,16 @@ void parse_command(char* command, char** args) {
 }
 
 void change_directory(char** args) {
+    char* HOME_dir = getenv("HOME");
     if (args[1] == NULL) {
-        char* HOME_dir = getenv("HOME");
         chdir(HOME_dir);
         return;
     }
-    if (chdir(args[1])) {
+    char* prefix_dir = replace_substring(args[1], "~", HOME_dir);
+    if (chdir(prefix_dir)) {
         perror("chdir failed");
     }
+    free(prefix_dir);
 }
 
 void execute_command(char** args) {
@@ -120,11 +121,31 @@ void execute_command(char** args) {
     }
 }
 
-int main() {
-    char command[MAX_COMMAND_LENGTH];
-    char* args[MAX_ARGS];
+void resource_configuration(char* command, char** args) {
+    char* HOME_dir = getenv("HOME");
+    char* config_path = (char*)malloc(strlen(HOME_dir) + 8);
+    strcpy(config_path, HOME_dir), strcat(config_path, "/.kshrc");
+    printf("%s\n", config_path);
 
+    FILE* file = fopen(config_path, "r");
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(command, sizeof(command), file)) {
+        command[strcspn(command, "\n")] = 0;
+        if (strlen(command)) {
+            parse_command(command, args);
+            execute_command(args);
+        }
+    }
+
+    fclose(file);
+}
+
+void ksh_loop(char* command, char** args) {
     rl_attempted_completion_function = my_completion;
+    rl_completion_append_character = '\0';
 
     while (1) {
         read_command(command);
@@ -138,6 +159,15 @@ int main() {
             execute_command(args);
         }
     }
+}
+
+int main() {
+    char command[MAX_COMMAND_LENGTH];
+    char* args[MAX_ARGS];
+
+    resource_configuration(command, args);
+
+    ksh_loop(command, args);
 
     return 0;
 }
