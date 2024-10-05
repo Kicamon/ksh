@@ -1,6 +1,7 @@
 CC = cc
 TARGET = ksh
-SRC = ksh.c lib/utools.c
+SRC = $(wildcard *.c)
+SRC += $(wildcard lib/*.c)
 OBJ = ${SRC:.c=.o}
  
 $(TARGET): $(OBJ)

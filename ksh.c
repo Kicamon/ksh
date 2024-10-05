@@ -1,3 +1,4 @@
+#include "lib/alias.h"
 #include "lib/utools.h"
 #include <limits.h>
 #include <pwd.h>
@@ -12,7 +13,14 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
 
-const char* commands[] = { "cd", "ls", "exit", "echo", "pwd", NULL };
+const char* commands[] = { "gd", "ls", "exit", "echo", "pwd", NULL };
+
+static char* command_generator(const char* text, int state);
+static char** my_completion(const char* text, int start, int end);
+static void read_command(char* command);
+static void parse_command(char* command, char** args);
+static void change_directory(char** args);
+static void execute_command(char** args);
 
 char* command_generator(const char* text, int state) {
     static int list_index, len;
@@ -85,8 +93,17 @@ void change_directory(char** args) {
 }
 
 void execute_command(char** args) {
-    if (!strcmp(args[0], "cd")) {
+    char* alias_command = find_alias(args[0]);
+    if (alias_command) {
+        char command[MAX_COMMAND_LENGTH];
+        strcpy(command, alias_command);
+        parse_command(command, args);
+    }
+
+    if (!strcmp(args[0], "gd")) {
         change_directory(args);
+    } else if (!strcmp(args[0], "alias")) {
+        handle_alias_command(args);
     } else {
         pid_t pid = fork();
         if (pid == 0) {
