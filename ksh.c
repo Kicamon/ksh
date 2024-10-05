@@ -16,7 +16,7 @@
 const char* commands[] = { "gd", "ls", "exit", "echo", "pwd", NULL };
 
 static void ksh_loop(char* command, char** args);
-static void resource_configuration(char* command, char** args);
+static void resource_configuration(char** args);
 static char* command_generator(const char* text, int state);
 static char** my_completion(const char* text, int start, int end);
 static void read_command(char* command);
@@ -121,22 +121,24 @@ void execute_command(char** args) {
     }
 }
 
-void resource_configuration(char* command, char** args) {
+void resource_configuration(char** args) {
     char* HOME_dir = getenv("HOME");
     char* config_path = (char*)malloc(strlen(HOME_dir) + 8);
     strcpy(config_path, HOME_dir), strcat(config_path, "/.kshrc");
-    printf("%s\n", config_path);
 
     FILE* file = fopen(config_path, "r");
     if (file == NULL) {
         return;
     }
 
-    while (fgets(command, sizeof(command), file)) {
-        command[strcspn(command, "\n")] = 0;
-        if (strlen(command)) {
-            parse_command(command, args);
-            execute_command(args);
+    char line[MAX_COMMAND_LENGTH];
+    while (fgets(line, sizeof(line), file) != NULL) {
+        line[strcspn(line, "\n")] = 0;
+        if (strlen(line)) {
+            parse_command(line, args);
+            if (args[0] != NULL) {
+                execute_command(args);
+            }
         }
     }
 
@@ -165,7 +167,7 @@ int main() {
     char command[MAX_COMMAND_LENGTH];
     char* args[MAX_ARGS];
 
-    resource_configuration(command, args);
+    resource_configuration(args);
 
     ksh_loop(command, args);
 
