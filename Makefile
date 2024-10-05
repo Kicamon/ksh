@@ -1,15 +1,21 @@
 CC = cc
-TARGET = Main
-SRC = $(wildcard *.c)
-SRC += $(wildcard lib/*.c)
-OBJ = $(patsubst %ac, %.o,$(SRC))
+TARGET = ksh
+SRC = ksh.c lib/utools.c
+OBJ = ${SRC:.c=.o}
  
 $(TARGET): $(OBJ)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ -lreadline
  
 %.o: %.c
 	$(CC) -c $< -o $@
- 
-.PHONY: clean
+
 clean:
 	rm -f *.o lib/*.o $(TARGET)
+
+install:
+	cp -f ${TARGET} /usr/bin
+ 
+uninstall:
+	rm -r /usr/bin/${TARGET}
+
+.PHONY: clean install uninstall

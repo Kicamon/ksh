@@ -1,6 +1,8 @@
 #include "lib/utools.h"
 #include <limits.h>
 #include <pwd.h>
+#include <readline/history.h>
+#include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +12,36 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
 
+const char* commands[] = { "cd", "ls", "exit", "echo", "pwd", NULL };
+
+char* command_generator(const char* text, int state) {
+    static int list_index, len;
+    char* name;
+
+    if (!state) {
+        list_index = 0;
+        len = strlen(text);
+    }
+
+    while ((name = (char*)commands[list_index++])) {
+        if (strncmp(name, text, len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    return NULL;
+}
+
+char** my_completion(const char* text, int start, int end) {
+    char** matches = NULL;
+
+    if (start == 0) {
+        matches = rl_completion_matches(text, command_generator);
+    }
+
+    return matches;
+}
+
 void read_command(char* command) {
     char dir[PATH_MAX];
     getcwd(dir, sizeof(dir));
@@ -18,9 +50,14 @@ void read_command(char* command) {
 
     printf("\n");
     printf("KicamonIce %s\n", prefix_dir);
-    printf("λ ");
-    fgets(command, MAX_COMMAND_LENGTH, stdin);
-    command[strcspn(command, "\n")] = 0;
+
+    char* input = readline("λ ");
+    if (input && *input) {
+        add_history(input);
+        strncpy(command, input, MAX_COMMAND_LENGTH - 1);
+        command[MAX_COMMAND_LENGTH - 1] = '\0';
+        free(input);
+    }
 
     free(prefix_dir);
 }
@@ -69,6 +106,8 @@ void execute_command(char** args) {
 int main() {
     char command[MAX_COMMAND_LENGTH];
     char* args[MAX_ARGS];
+
+    rl_attempted_completion_function = my_completion;
 
     while (1) {
         read_command(command);
