@@ -1,1 +1,1 @@
-char* replace_substring(const char* str, const char* old_substr, const char* new_substr);
+void replace_substring(char* str, const char* old_substr, const char* new_substr, int sub_num);

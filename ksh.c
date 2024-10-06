@@ -14,25 +14,28 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
 
-const char* commands[] = { "gd", "ls", "exit", "echo", "pwd", NULL };
+const char* commands[] = { "cd", "ls", "exit", "echo", "pwd", NULL };
 
 static void ksh_loop(char* command, char** args);
 static void resource_configuration(char** args);
 static char* command_generator(const char* text, int state);
-static char** my_completion(const char* text, int start, int end);
+static char** ksh_completion(const char* text, int start, int end);
 static void read_command(char* command);
 static void parse_command(char* command, char** args);
 static void change_directory(char** args);
 static void execute_command(char** args);
 static void run_file(char* file_path, char** args);
 
-// TODO: runnig script file
+// TODO: improve the execution of the file
+
+// execute a file
 void run_file(char* file_path, char** args) {
     FILE* file = fopen(file_path, "r");
     if (file == NULL) {
         return;
     }
 
+    // read file by line and running
     char line[MAX_COMMAND_LENGTH];
     while (fgets(line, sizeof(line), file) != NULL) {
         line[strcspn(line, "\n")] = 0;
@@ -65,7 +68,7 @@ char* command_generator(const char* text, int state) {
     return NULL;
 }
 
-char** my_completion(const char* text, int start, int end) {
+char** ksh_completion(const char* text, int start, int end) {
     (void)start;
     (void)end;
 
@@ -76,10 +79,10 @@ void read_command(char* command) {
     char dir[PATH_MAX];
     getcwd(dir, sizeof(dir));
     char* HOME_dir = getenv("HOME");
-    char* prefix_dir = replace_substring(dir, HOME_dir, "~");
+    replace_substring(dir, HOME_dir, "~", 1);
 
     printf("\n");
-    printf("\033[1;37m%s\033[0m \033[1;36m%s\033[0m\n", getenv("LOGNAME"), prefix_dir);
+    printf("\033[1;37m%s\033[0m \033[1;36m%s\033[0m\n", getenv("LOGNAME"), dir);
 
     char* input = readline("\033[1;32mλ\033[0m ");
     if (input && *input) {
@@ -88,10 +91,9 @@ void read_command(char* command) {
         command[MAX_COMMAND_LENGTH - 1] = '\0';
         free(input);
     }
-
-    free(prefix_dir);
 }
 
+// convert the command into arguments for execvp
 void parse_command(char* command, char** args) {
     char* token;
     int i = 0;
@@ -109,14 +111,17 @@ void change_directory(char** args) {
         chdir(HOME_dir);
         return;
     }
-    char* prefix_dir = replace_substring(args[1], "~", HOME_dir);
-    if (chdir(prefix_dir)) {
+    char* dir = (char*)malloc(strlen(args[1] + 1));
+    strcat(dir, args[1]);
+    replace_substring(dir, "~", HOME_dir, 1);
+    if (chdir(dir)) {
         perror("chdir failed");
     }
-    free(prefix_dir);
+    free(dir);
 }
 
 void execute_command(char** args) {
+    // check and convert alias command
     char* alias_command = find_alias(args[0]);
     if (alias_command) {
         char command[MAX_COMMAND_LENGTH];
@@ -129,6 +134,7 @@ void execute_command(char** args) {
     } else if (!strcmp(args[0], "alias")) {
         handle_alias_command(args);
     } else {
+        // run the command in the child process
         pid_t pid = fork();
         if (pid == 0) {
             if (execvp(args[0], args) == -1) {
@@ -144,6 +150,7 @@ void execute_command(char** args) {
     }
 }
 
+// read user's configuration file and init shell
 void resource_configuration(char** args) {
     char* HOME_dir = getenv("HOME");
     char* config_path = (char*)malloc(strlen(HOME_dir) + 8);
@@ -153,11 +160,13 @@ void resource_configuration(char** args) {
 }
 
 void ksh_loop(char* command, char** args) {
-    rl_attempted_completion_function = my_completion;
+    rl_attempted_completion_function = ksh_completion;
+    int has_pipe = 0;
 
     while (1) {
         read_command(command);
 
+        // exit ksh when enter exit
         if (!strcmp(command, "exit")) {
             break;
         }
@@ -167,14 +176,15 @@ void ksh_loop(char* command, char** args) {
             continue;
         }
 
-        int has_pipe = 0;
+        // check whether command has pipe
         for (int i = 0; args[i]; ++i) {
-            if (strcmp(args[i], "|")) {
+            if (!strcmp(args[i], "|")) {
                 has_pipe = 1;
                 break;
             }
         }
         if (has_pipe) {
+            has_pipe = 0;
             run_pipe(args);
         } else {
             execute_command(args);
