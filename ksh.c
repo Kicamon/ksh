@@ -1,4 +1,5 @@
 #include "lib/alias.h"
+#include "lib/pipe.h"
 #include "lib/utools.h"
 #include <limits.h>
 #include <pwd.h>
@@ -23,6 +24,28 @@ static void read_command(char* command);
 static void parse_command(char* command, char** args);
 static void change_directory(char** args);
 static void execute_command(char** args);
+static void run_file(char* file_path, char** args);
+
+// TODO: runnig script file
+void run_file(char* file_path, char** args) {
+    FILE* file = fopen(file_path, "r");
+    if (file == NULL) {
+        return;
+    }
+
+    char line[MAX_COMMAND_LENGTH];
+    while (fgets(line, sizeof(line), file) != NULL) {
+        line[strcspn(line, "\n")] = 0;
+        if (strlen(line)) {
+            parse_command(line, args);
+            if (args[0] != NULL) {
+                execute_command(args);
+            }
+        }
+    }
+
+    fclose(file);
+}
 
 char* command_generator(const char* text, int state) {
     static int list_index, len;
@@ -101,7 +124,7 @@ void execute_command(char** args) {
         parse_command(command, args);
     }
 
-    if (!strcmp(args[0], "gd")) {
+    if (!strcmp(args[0], "cd")) {
         change_directory(args);
     } else if (!strcmp(args[0], "alias")) {
         handle_alias_command(args);
@@ -126,50 +149,50 @@ void resource_configuration(char** args) {
     char* config_path = (char*)malloc(strlen(HOME_dir) + 8);
     strcpy(config_path, HOME_dir), strcat(config_path, "/.kshrc");
 
-    FILE* file = fopen(config_path, "r");
-    if (file == NULL) {
-        return;
-    }
-
-    char line[MAX_COMMAND_LENGTH];
-    while (fgets(line, sizeof(line), file) != NULL) {
-        line[strcspn(line, "\n")] = 0;
-        if (strlen(line)) {
-            parse_command(line, args);
-            if (args[0] != NULL) {
-                execute_command(args);
-            }
-        }
-    }
-
-    fclose(file);
+    run_file(config_path, args);
 }
 
 void ksh_loop(char* command, char** args) {
     rl_attempted_completion_function = my_completion;
-    rl_completion_append_character = '\0';
 
     while (1) {
         read_command(command);
 
-        if (strcmp(command, "exit") == 0) {
+        if (!strcmp(command, "exit")) {
             break;
         }
 
         parse_command(command, args);
-        if (args[0] != NULL) {
+        if (args[0] == NULL) {
+            continue;
+        }
+
+        int has_pipe = 0;
+        for (int i = 0; args[i]; ++i) {
+            if (strcmp(args[i], "|")) {
+                has_pipe = 1;
+                break;
+            }
+        }
+        if (has_pipe) {
+            run_pipe(args);
+        } else {
             execute_command(args);
         }
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     char command[MAX_COMMAND_LENGTH];
     char* args[MAX_ARGS];
 
-    resource_configuration(args);
+    if (argc == 1) {
+        resource_configuration(args);
 
-    ksh_loop(command, args);
+        ksh_loop(command, args);
+    } else {
+        run_file(argv[2], args);
+    }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

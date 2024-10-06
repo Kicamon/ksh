@@ -49,7 +49,14 @@ void handle_alias_command(char** args) {
         return;
     }
 
-    char* alias = strtok(args[1], "=");
+    char* arg = (char*)malloc(sizeof(args));
+    strcpy(arg, args[1]);
+    for (int i = 2; args[i]; ++i) {
+        strcat(arg, " ");
+        strcat(arg, args[i]);
+    }
+
+    char* alias = strtok(arg, "=");
     char* command = strtok(NULL, "=");
     if (alias && command) {
         add_alias(alias, command);
