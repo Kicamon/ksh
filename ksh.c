@@ -15,6 +15,7 @@
 #define MAX_ARGS 64
 
 const char* commands[] = { "cd", "ls", "exit", "echo", "pwd", NULL };
+int running = 1;
 
 static void ksh_loop(char* command, char** args);
 static void resource_configuration(char** args);
@@ -76,13 +77,14 @@ char** ksh_completion(const char* text, int start, int end) {
 }
 
 void read_command(char* command) {
-    char dir[PATH_MAX];
-    getcwd(dir, sizeof(dir));
+    char temp_dir[PATH_MAX];
+    getcwd(temp_dir, sizeof(temp_dir));
     char* HOME_dir = getenv("HOME");
-    replace_substring(dir, HOME_dir, "~", 1);
+    char* dir = replace_substring(temp_dir, HOME_dir, "~", 1);
 
     printf("\n");
     printf("\033[1;37m%s\033[0m \033[1;36m%s\033[0m\n", getenv("LOGNAME"), dir);
+    free(dir);
 
     char* input = readline("\033[1;32mλ\033[0m ");
     if (input && *input) {
@@ -111,9 +113,10 @@ void change_directory(char** args) {
         chdir(HOME_dir);
         return;
     }
-    char* dir = (char*)malloc(strlen(args[1] + 1));
-    strcat(dir, args[1]);
-    replace_substring(dir, "~", HOME_dir, 1);
+    char* tmp_dir = (char*)malloc(strlen(args[1] + 1));
+    strcat(tmp_dir, args[1]);
+    char* dir = replace_substring(tmp_dir, "~", HOME_dir, 1);
+    free(tmp_dir);
     if (chdir(dir)) {
         perror("chdir failed");
     }
@@ -128,8 +131,9 @@ void execute_command(char** args) {
         strcpy(command, alias_command);
         parse_command(command, args);
     }
-
-    if (!strcmp(args[0], "cd")) {
+    if (!strcmp(args[0], "exit")) {
+        running = 0;
+    } else if (!strcmp(args[0], "cd")) {
         change_directory(args);
     } else if (!strcmp(args[0], "alias")) {
         handle_alias_command(args);
@@ -163,13 +167,8 @@ void ksh_loop(char* command, char** args) {
     rl_attempted_completion_function = ksh_completion;
     int has_pipe = 0;
 
-    while (1) {
+    while (running) {
         read_command(command);
-
-        // exit ksh when enter exit
-        if (!strcmp(command, "exit")) {
-            break;
-        }
 
         parse_command(command, args);
         if (args[0] == NULL) {
