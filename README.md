@@ -1,6 +1,11 @@
 # A simple shell
 
-这是一个由c语言实现的简易shell，支持的功能：
+这是一个由c语言实现的简易shell
+
+### screenshot
+![demo](./img/demo.png)
+
+### TODO
 - [x] 交互界面
 - [x] TAB键补全
 - [x] alias映射

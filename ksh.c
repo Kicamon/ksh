@@ -28,8 +28,7 @@ static void execute_command(char** args);
 static void run_file(char* file_path, char** args);
 
 // TODO: improve the execution of the file
-
-// execute a file
+// execute file
 void run_file(char* file_path, char** args) {
     FILE* file = fopen(file_path, "r");
     if (file == NULL) {
@@ -84,7 +83,6 @@ void read_command(char* command) {
 
     printf("\n");
     printf("\033[1;37m%s\033[0m \033[1;36m%s\033[0m\n", getenv("LOGNAME"), dir);
-    free(dir);
 
     char* input = readline("\033[1;32mλ\033[0m ");
     if (input && *input) {
@@ -92,6 +90,9 @@ void read_command(char* command) {
         strncpy(command, input, MAX_COMMAND_LENGTH - 1);
         command[MAX_COMMAND_LENGTH - 1] = '\0';
         free(input);
+    }
+    if (strstr(temp_dir, HOME_dir)) {
+        free(dir);
     }
 }
 
@@ -113,14 +114,14 @@ void change_directory(char** args) {
         chdir(HOME_dir);
         return;
     }
-    char* tmp_dir = (char*)malloc(strlen(args[1] + 1));
-    strcat(tmp_dir, args[1]);
-    char* dir = replace_substring(tmp_dir, "~", HOME_dir, 1);
-    free(tmp_dir);
+    char* dir = replace_substring(args[1], "~", HOME_dir, 1);
     if (chdir(dir)) {
         perror("chdir failed");
     }
-    free(dir);
+
+    if (!strcmp(args[1], "~")) {
+        free(dir);
+    }
 }
 
 void execute_command(char** args) {

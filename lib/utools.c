@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#define MIN(A, B) ((A) < (B) ? (A) : (B))
+
 int get_substring_num(const char* str, const char* substr, const int substr_len) {
     for (int i = 0, idx = 0; i < INT_MAX; ++i) {
         char* tmp_str = strstr(str + idx, substr);
@@ -27,7 +29,7 @@ char* replace_substring(char* str, const char* old_substr, const char* new_subst
         return str;
     }
 
-    sub_num = sub_num > 0 ? sub_num : get_substring_num(str, old_substr, old_substr_len);
+    sub_num = MIN(sub_num, get_substring_num(str,old_substr,old_substr_len));
 
     char* result;
     if (new_substr_len > old_substr_len) {
