@@ -1,1 +1,1 @@
-void run_pipe(char** args);
+void run_pipe(char **args);

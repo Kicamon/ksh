@@ -5,6 +5,13 @@
 ### screenshot
 ![demo](./img/demo.png)
 
+### 主题配置
+```shell
+THEME_PREFIX_CHAR λ
+THEME (white;none){hostname} (dark_green;none){directory}
+THEME (green;none){prefix}
+```
+
 ### TODO
 - [x] 交互界面
 - [x] TAB键补全
