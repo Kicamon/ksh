@@ -1,11 +1,13 @@
 #include "util.h"
+#include <stdio.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <pwd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-char result[PATH_MAX];
+static int get_substring_num(const char *str, const char *substr, const int substr_len);
 
 int get_substring_num(const char *str, const char *substr, const int substr_len) {
         for (int i = 0, idx = 0; i < INT_MAX; ++i) {
@@ -21,6 +23,7 @@ int get_substring_num(const char *str, const char *substr, const int substr_len)
 }
 
 char *replace_substring(char *str, const char *old_substr, const char *new_substr, int sub_num) {
+        static char result[PATH_MAX];
         int old_substr_len = strlen(old_substr);
         int new_substr_len = strlen(new_substr);
         int str_len = strlen(str);
@@ -55,4 +58,36 @@ char *replace_substring(char *str, const char *old_substr, const char *new_subst
         free(suffix);
 
         return result;
+}
+
+int pscanf(const char *path, const char *fmt, ...) {
+        FILE *fp = NULL;
+        va_list ap;
+        int n;
+
+        if (!(fp = fopen(path, "r"))) {
+                return -1;
+        }
+        va_start(ap, fmt);
+        n = vfscanf(fp, fmt, ap);
+        va_end(ap);
+        fclose(fp);
+
+        return (n == EOF) ? -1 : n;
+}
+
+int cscanf(const char *cmd, const char *fmt, ...) {
+        FILE *cp = NULL;
+        va_list ap;
+        int n;
+
+        if (!(cp = popen(cmd, "r"))) {
+                return -1;
+        }
+        va_start(ap, fmt);
+        n = vfscanf(cp, fmt, ap);
+        va_end(ap);
+        pclose(cp);
+
+        return (n == EOF) ? -1 : n;
 }

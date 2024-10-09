@@ -109,7 +109,7 @@ void parse_command(char *command, char **args) {
         char *token;
         int i = 0;
         token = strtok(command, " ");
-        while (token != NULL) {
+        while (token != NULL && token[0] != '#') {
                 args[i++] = token;
                 token = strtok(NULL, " ");
         }
@@ -136,6 +136,7 @@ void execute_command(char **args) {
                 strcpy(command, alias_command);
                 parse_command(command, args);
         }
+
         if (!strcmp(args[0], "exit")) {
                 running = 0;
         } else if (!strcmp(args[0], "THEME_PREFIX_CHAR")) {

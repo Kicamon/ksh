@@ -6,7 +6,5 @@ struct Alias {
         Alias *next;
 };
 
-void list_alias();
 char *find_alias(const char *alias);
-void add_alias(const char *alias, const char *command);
 void handle_alias_command(char **args);

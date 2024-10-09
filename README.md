@@ -8,7 +8,7 @@
 ### 主题配置
 ```shell
 THEME_PREFIX_CHAR λ
-THEME (white;none){hostname} (dark_green;none){directory}
+THEME (white;none){hostname} (dark_green;none){directory} (purple;none){git_info}
 THEME (green;none){prefix}
 ```
 

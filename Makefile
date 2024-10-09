@@ -16,8 +16,11 @@ clean:
 install: $(TARGET)
 	cp -f ${TARGET} /usr/bin
 	rm -f *.o lib/*.o $(TARGET)
+
+test: $(TARGET)
+	./$(TARGET)
  
 uninstall:
 	rm -r /usr/bin/${TARGET}
 
-.PHONY: clean install uninstall
+.PHONY: test clean install uninstall

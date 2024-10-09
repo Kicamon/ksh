@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void list_alias();
+static void add_alias(const char *alias, const char *command);
+
 static Alias *alias_start = NULL, *alias_end = NULL;
 
 void list_alias() {

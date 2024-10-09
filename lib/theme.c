@@ -6,13 +6,23 @@
 #include <stdio.h>
 #include <string.h>
 
+static int get_color_idx(const char *color, int start_idx);
+static char *get_style(const char *text);
+static char *git_info();
+static char *prefix();
+static char *hostname();
+static char *directory();
+static char *(*handle_theme_text(const char *text))();
+static char *get_text(const char *text);
+static void theme_init();
+static void theme_fini();
+
+char *colors[] = { "black", "dark_red", "green", "yellow", "blue", "purple", "dark_green", "white" };
 Theme *theme_start, *theme_end;
 char *prefix_char;
 int theme_len = 0;
 
-// ========================================= get style
-
-char *colors[] = { "black", "dark_red", "green", "yellow", "blue", "purple", "dark_green", "white" };
+// ===================== get style =====================
 
 int get_color_idx(const char *color, int start_idx) {
         for (int i = 0; i < 8; ++i) {
@@ -60,11 +70,42 @@ char *get_style(const char *text) {
         return style;
 }
 
-// ========================================= get text
-// TODO: git
+// ===================== get text =====================
 
-char *return_str(char *str) {
-        return str;
+char *git_info() {
+        static char git_infos[256];
+
+        char branch[20];
+        int add = 0, del = 0, mdy = 0;
+
+        // check is git repositore
+        if (system("git rev-parse --is-inside-work-tree &>/dev/null")) {
+                return "";
+        }
+
+        // get branch
+        if (cscanf("git rev-parse --abbrev-ref HEAD", "%s", branch) != 1) {
+                return "";
+        }
+
+        // get more info
+        FILE *cp = NULL;
+        cp = popen("git status --short", "r");
+        if (!cp) {
+                return "";
+        }
+        while (fgets(git_infos, sizeof(git_infos) - 1, cp)) {
+                char temp[3];
+                sscanf(git_infos, "%s", temp);
+                add += temp[0] == '?';
+                del += temp[0] == 'D';
+                mdy += temp[0] == 'M';
+        }
+        pclose(cp);
+
+        sprintf(git_infos, "<%s> +%d ~%d -%d", branch, add, mdy, del);
+
+        return git_infos;
 }
 
 char *prefix() {
@@ -91,6 +132,8 @@ char *(*handle_theme_text(const char *text))() {
                 return &directory;
         } else if (!strcmp(text, "prefix")) {
                 return &prefix;
+        } else if (!strcmp(text, "git_info")) {
+                return &git_info;
         }
 
         return NULL;
@@ -149,7 +192,9 @@ void theme_add_line(char **args) {
 }
 
 void set_prefix_char(char *str) {
-        prefix_char = (char *)malloc(strlen(str) + 1);
+        if (prefix_char == NULL) {
+                prefix_char = (char *)malloc(strlen(str) + 1);
+        }
         strcpy(prefix_char, str);
 }
 
