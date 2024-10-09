@@ -1,7 +1,6 @@
 CC = cc
 TARGET = ksh
-SRC = $(wildcard *.c)
-SRC += $(wildcard lib/*.c)
+SRC = $(wildcard src/*.c)
 OBJ = ${SRC:.c=.o}
 
 $(TARGET): $(OBJ)
@@ -11,11 +10,10 @@ $(TARGET): $(OBJ)
 	$(CC) -c $< -o $@
 
 clean:
-	rm -f *.o lib/*.o $(TARGET)
+	rm -f *.o src/*.o $(TARGET)
 
 install: $(TARGET)
 	cp -f ${TARGET} /usr/bin
-	rm -f *.o lib/*.o $(TARGET)
 
 test: $(TARGET)
 	./$(TARGET)

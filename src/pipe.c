@@ -1,5 +1,5 @@
-#include "pipe.h"
-#include "util.h"
+#include "../include/pipe.h"
+#include "../include/util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

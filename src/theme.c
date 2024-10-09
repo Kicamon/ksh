@@ -1,5 +1,5 @@
-#include "theme.h"
-#include "util.h"
+#include "../include/theme.h"
+#include "../include/util.h"
 #include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -1,7 +1,7 @@
-#include "lib/alias.h"
-#include "lib/pipe.h"
-#include "lib/util.h"
-#include "lib/theme.h"
+#include "../include/alias.h"
+#include "../include/pipe.h"
+#include "../include/util.h"
+#include "../include/theme.h"
 #include <limits.h>
 #include <pwd.h>
 #include <readline/history.h>
@@ -106,14 +106,21 @@ void read_command(char *command) {
 
 // convert the command into arguments for execvp
 void parse_command(char *command, char **args) {
-        char *token;
-        int i = 0;
-        token = strtok(command, " ");
-        while (token != NULL && token[0] != '#') {
-                args[i++] = token;
-                token = strtok(NULL, " ");
+        int idx = 0, command_len = strlen(command);
+        int squotes = 0, dquotes = 0;
+        for (int i = 0, j = 0; i <= command_len; ++i) {
+                if ((i == command_len || command[i] == ' ') && !squotes && !dquotes) {
+                        int len = i - j;
+                        char *token = (char *)malloc(len + 1);
+                        strncpy(token, command + j, len);
+                        token[len] = '\0';
+                        args[idx++] = token;
+                        j = i + 1;
+                }
+                squotes ^= command[i] == '\'';
+                dquotes ^= command[i] == '"';
         }
-        args[i] = NULL;
+        args[idx] = NULL;
 }
 
 void change_directory(char **args) {
@@ -161,6 +168,10 @@ void execute_command(char **args) {
                 } else {
                         perror("fork failed");
                 }
+        }
+
+        for (int i = 0; args[i]; ++i) {
+                free(args[i]);
         }
 }
 
