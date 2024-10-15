@@ -1,5 +1,4 @@
-#include "../include/alias.h"
-#include "../include/pipe.h"
+#include "../include/kshfuncs.h"
 #include "../include/util.h"
 #include "../include/theme.h"
 #include <limits.h>
@@ -109,7 +108,12 @@ void parse_command(char *command, char **args) {
         int idx = 0, command_len = strlen(command);
         int squotes = 0, dquotes = 0;
         for (int i = 0, j = 0; i <= command_len; ++i) {
-                if ((i == command_len || command[i] == ' ') && !squotes && !dquotes) {
+                squotes ^= command[i] == '\'';
+                dquotes ^= command[i] == '"';
+                if (squotes || dquotes) {
+                        continue;
+                }
+                if (i == command_len || command[i] == ' ') {
                         int len = i - j;
                         char *token = (char *)malloc(len + 1);
                         strncpy(token, command + j, len);
@@ -117,8 +121,6 @@ void parse_command(char *command, char **args) {
                         args[idx++] = token;
                         j = i + 1;
                 }
-                squotes ^= command[i] == '\'';
-                dquotes ^= command[i] == '"';
         }
         args[idx] = NULL;
 }
@@ -175,7 +177,7 @@ void execute_command(char **args) {
         }
 }
 
-// read user's configuration file and init shell
+// read user's configuration file and initialization shell
 void resource_configuration(char **args) {
         char *HOME_dir = getenv("HOME");
         char *config_path = (char *)malloc(strlen(HOME_dir) + 8);

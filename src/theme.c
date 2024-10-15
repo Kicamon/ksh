@@ -14,8 +14,7 @@ static char *hostname();
 static char *directory();
 static char *(*handle_theme_text(const char *text))();
 static char *get_text(const char *text);
-static void theme_init();
-static void theme_fini();
+static void handle_theme_line(Theme **a, Theme **b);
 
 char *colors[] = { "black", "dark_red", "green", "yellow", "blue", "purple", "dark_green", "white" };
 Theme *theme_start, *theme_end;
@@ -78,7 +77,7 @@ char *git_info() {
         char branch[20];
         int add = 0, del = 0, mdy = 0;
 
-        // check is git repositore
+        // check is git repository
         if (system("git rev-parse --is-inside-work-tree &>/dev/null")) {
                 return "";
         }
@@ -151,24 +150,17 @@ char *get_text(const char *text) {
 
 // =========================================
 
-void theme_init() {
+void handle_theme_line(Theme **a, Theme **b) {
         Theme *node = (Theme *)malloc(sizeof(Theme));
         node->style = "endl";
-        theme_start = theme_end = node;
-}
-
-void theme_fini() {
-        Theme *node = (Theme *)malloc(sizeof(Theme));
-        node->style = "endl";
-        theme_end->next = node;
-        theme_end = node;
+        *a = *b = node;
 }
 
 void theme_add_line(char **args) {
         theme_len++;
 
         if (theme_start == NULL) {
-                theme_init();
+                handle_theme_line(&theme_start, &theme_end);
         }
 
         for (int i = 1; args[i]; ++i) {
@@ -188,7 +180,7 @@ void theme_add_line(char **args) {
                 theme_end = node;
         }
 
-        theme_fini();
+        handle_theme_line(&theme_end, &theme_end->next);
 }
 
 void set_prefix_char(char *str) {
