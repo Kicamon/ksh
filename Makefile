@@ -10,12 +10,14 @@ $(TARGET): $(OBJ)
 	$(CC) -c $< -o $@
 
 clean:
-	rm -f *.o src/*.o $(TARGET)
+	rm -f lib/*.o $(TARGET)
 
 install: $(TARGET)
+	mv $(OBJ) ./lib
 	cp -f ${TARGET} /usr/bin
 
 test: $(TARGET)
+	mv $(OBJ) ./lib
 	./$(TARGET)
  
 uninstall:

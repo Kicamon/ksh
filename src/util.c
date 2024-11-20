@@ -22,42 +22,44 @@ int get_substring_num(const char *str, const char *substr, const int substr_len)
         return 0;
 }
 
-char *replace_substring(char *str, const char *old_substr, const char *new_substr, int sub_num) {
-        static char result[PATH_MAX];
-        int old_substr_len = strlen(old_substr);
-        int new_substr_len = strlen(new_substr);
-        int str_len = strlen(str);
+// Quickly dynamic substitute string
+void replace_substring(char **str, const char *old_substr, const char *new_substr, int sub_num) {
+        size_t str_len = strlen(*str);
+        size_t old_substr_len = strlen(old_substr);
+        size_t new_substr_len = strlen(new_substr);
 
-        if (str_len < old_substr_len || !strstr(str, old_substr)) {
-                return str;
+        if (str_len < old_substr_len || !strstr(*str, old_substr)) {
+                return;
         }
 
-        sub_num = MIN(sub_num, get_substring_num(str, old_substr, old_substr_len));
-
-        strcpy(result, str);
+        int total_subnum = get_substring_num(*str, old_substr, old_substr_len);
+        sub_num = (sub_num <= 0 || sub_num > total_subnum) ? total_subnum : sub_num;
 
         char *prefix = (char *)malloc(str_len + 1);
         char *suffix = (char *)malloc(str_len + 1);
+        int new_str_len = str_len + (new_substr_len - old_substr_len) * sub_num;
+        char *new_str = (char *)malloc(new_str_len + 1);
+        strcpy(new_str, *str);
 
         for (int i = 0; i < sub_num; ++i) {
-                int prefix_len = strstr(result, old_substr) - result;
-                int suffix_start_idx = prefix_len + old_substr_len;
-                int suffix_len = str_len - suffix_start_idx;
+                int prefix_len = strstr(new_str, old_substr) - new_str;
+                int suffix_start_postion = prefix_len + old_substr_len;
+                int suffix_len = new_str_len - suffix_start_postion;
 
-                strncpy(prefix, result, prefix_len);
+                strncpy(prefix, new_str, prefix_len);
                 prefix[prefix_len] = '\0';
-                strncpy(suffix, result + suffix_start_idx, suffix_len);
+                strncpy(suffix, new_str + suffix_start_postion, suffix_len);
                 suffix[suffix_len] = '\0';
 
-                strcpy(result, prefix);
-                strcat(result, new_substr);
-                strcat(result, suffix);
+                strcpy(new_str, prefix);
+                strcat(new_str, new_substr);
+                strcat(new_str, suffix);
         }
 
+        free(*str);
         free(prefix);
         free(suffix);
-
-        return result;
+        *str = new_str;
 }
 
 int pscanf(const char *path, const char *fmt, ...) {

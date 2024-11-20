@@ -131,10 +131,12 @@ void change_directory(char **args) {
                 chdir(HOME_dir);
                 return;
         }
-        char *dir = replace_substring(args[1], "~", HOME_dir, 1);
+        char *dir = strdup(args[1]);
+        replace_substring(&dir, "~", HOME_dir, 1);
         if (chdir(dir)) {
                 perror("chdir failed");
         }
+        free(dir);
 }
 
 void execute_command(char **args) {

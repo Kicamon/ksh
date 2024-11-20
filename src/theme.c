@@ -116,10 +116,12 @@ char *hostname() {
 }
 
 char *directory() {
-        char temp_dir[PATH_MAX];
+        char *temp_dir = malloc(PATH_MAX);
         getcwd(temp_dir, sizeof(temp_dir));
         char *HOME_dir = getenv("HOME");
-        char *dir = replace_substring(temp_dir, HOME_dir, "~", 1);
+        char *dir = strdup(temp_dir);
+        replace_substring(&dir, HOME_dir, "~", 1);
+        free(temp_dir);
 
         return dir;
 }
